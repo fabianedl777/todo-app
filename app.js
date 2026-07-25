@@ -100,6 +100,24 @@ function loadFilter() {
   }
 }
 
+function saveTheme(theme) {
+  try {
+    localStorage.setItem('theme', theme);
+  } catch (e) {
+    // Swallow: app continues with in-memory theme
+  }
+}
+
+function loadTheme() {
+  try {
+    const t = localStorage.getItem('theme');
+    if (t === 'light' || t === 'dark') return t;
+    return 'light';
+  } catch (e) {
+    return 'light';
+  }
+}
+
 // ============================================================
 // Cross-Environment Export Guard
 // ============================================================
@@ -117,6 +135,8 @@ if (typeof module !== 'undefined' && module.exports) {
     loadTasks,
     saveFilter,
     loadFilter,
+    saveTheme,
+    loadTheme,
   };
 }
 
@@ -126,6 +146,7 @@ if (typeof module !== 'undefined' && module.exports) {
 
 let tasks = [];
 let currentFilter = 'all';
+let currentTheme = 'light';
 
 function render(tasks) {
   const ul = document.getElementById('todo-list');
@@ -153,6 +174,13 @@ function render(tasks) {
     deleteBtn.textContent = '×';
 
     li.append(checkbox, span, deleteBtn);
+    ul.appendChild(li);
+  }
+
+  if (visible.length === 0) {
+    const li = document.createElement('li');
+    li.className = 'empty-state';
+    li.textContent = getEmptyMessage();
     ul.appendChild(li);
   }
 
@@ -255,6 +283,25 @@ function updateFilterButtons() {
   });
 }
 
+function applyTheme(theme) {
+  document.documentElement.dataset.theme = theme;
+  const btn = document.querySelector('.theme-toggle');
+  if (btn) btn.textContent = theme === 'dark' ? '☀️' : '🌙';
+}
+
+function handleThemeToggle() {
+  currentTheme = currentTheme === 'dark' ? 'light' : 'dark';
+  saveTheme(currentTheme);
+  applyTheme(currentTheme);
+}
+
+function getEmptyMessage() {
+  if (tasks.length === 0) return 'No tasks yet. Add one above!';
+  if (currentFilter === 'active') return 'No active tasks. Nice work!';
+  if (currentFilter === 'completed') return 'No completed tasks yet.';
+  return 'Nothing to show.';
+}
+
 function updateTaskCount(tasks) {
   const count = countActive(tasks);
   const el = document.querySelector('.task-count');
@@ -273,6 +320,8 @@ function handleFilterClick(e) {
 function init() {
   tasks = loadTasks();
   currentFilter = loadFilter();
+  currentTheme = loadTheme();
+  applyTheme(currentTheme);
   updateFilterButtons();
   render(tasks);
 
@@ -284,6 +333,7 @@ function init() {
   document.getElementById('todo-list').addEventListener('dblclick', handleListDblClick);
   document.querySelector('.filters').addEventListener('click', handleFilterClick);
   document.querySelector('.clear-completed').addEventListener('click', handleClearCompleted);
+  document.querySelector('.theme-toggle').addEventListener('click', handleThemeToggle);
 }
 
 if (typeof document !== 'undefined') {
