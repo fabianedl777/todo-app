@@ -1,6 +1,6 @@
 const { test, describe, beforeEach, afterEach } = require('node:test');
 const assert = require('node:assert/strict');
-const { createTask, toggleTask, deleteTask, editTask, filterTasks, countActive, clearCompleted, setPriority } = require('../app.js');
+const { createTask, toggleTask, deleteTask, editTask, filterTasks, countActive, clearCompleted, setPriority, filterByPriority, formatRelativeTime, importTasks } = require('../app.js');
 const { stubUUID, makeTasks } = require('./helpers');
 
 describe('createTask', () => {
@@ -400,6 +400,150 @@ describe('createTask priority default', () => {
     const tasks = makeTasks(0);
     const result = createTask(tasks, 'New task');
     assert.strictEqual(result[0].priority, 'medium');
+  });
+});
+
+describe('filterByPriority', () => {
+  test('"all" returns all tasks (new reference)', () => {
+    const tasks = makeTasks(3);
+    const result = filterByPriority(tasks, 'all');
+    assert.strictEqual(result.length, 3);
+    assert.notStrictEqual(result, tasks);
+  });
+
+  test('"high" returns only high priority tasks', () => {
+    const tasks = makeTasks(3);
+    tasks[0].priority = 'high';
+    tasks[1].priority = 'medium';
+    tasks[2].priority = 'low';
+    const result = filterByPriority(tasks, 'high');
+    assert.strictEqual(result.length, 1);
+    assert.strictEqual(result[0].priority, 'high');
+  });
+
+  test('"medium" returns only medium priority tasks', () => {
+    const tasks = makeTasks(3);
+    tasks[0].priority = 'high';
+    tasks[1].priority = 'medium';
+    tasks[2].priority = 'low';
+    const result = filterByPriority(tasks, 'medium');
+    assert.strictEqual(result.length, 1);
+    assert.strictEqual(result[0].priority, 'medium');
+  });
+
+  test('"low" returns only low priority tasks', () => {
+    const tasks = makeTasks(3);
+    tasks[0].priority = 'high';
+    tasks[1].priority = 'medium';
+    tasks[2].priority = 'low';
+    const result = filterByPriority(tasks, 'low');
+    assert.strictEqual(result.length, 1);
+    assert.strictEqual(result[0].priority, 'low');
+  });
+
+  test('tasks without priority treated as medium', () => {
+    const tasks = makeTasks(2);
+    const result = filterByPriority(tasks, 'medium');
+    assert.strictEqual(result.length, 2);
+  });
+
+  test('empty array returns empty', () => {
+    assert.deepStrictEqual(filterByPriority([], 'high'), []);
+  });
+
+  test('does not mutate input', () => {
+    const tasks = makeTasks(2);
+    tasks[0].priority = 'high';
+    const snapshot = JSON.parse(JSON.stringify(tasks));
+    filterByPriority(tasks, 'high');
+    assert.deepStrictEqual(tasks, snapshot);
+  });
+
+  test('returns new reference', () => {
+    const tasks = makeTasks(2);
+    assert.notStrictEqual(filterByPriority(tasks, 'all'), tasks);
+  });
+});
+
+describe('formatRelativeTime', () => {
+  test('"just now" for < 60s', () => {
+    const iso = new Date(Date.now() - 10 * 1000).toISOString();
+    assert.strictEqual(formatRelativeTime(iso), 'just now');
+  });
+
+  test('"5m ago" for 5 minutes', () => {
+    const iso = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+    assert.strictEqual(formatRelativeTime(iso), '5m ago');
+  });
+
+  test('"2h ago" for 2 hours', () => {
+    const iso = new Date(Date.now() - 2 * 3600 * 1000).toISOString();
+    assert.strictEqual(formatRelativeTime(iso), '2h ago');
+  });
+
+  test('"3d ago" for 3 days', () => {
+    const iso = new Date(Date.now() - 3 * 86400 * 1000).toISOString();
+    assert.strictEqual(formatRelativeTime(iso), '3d ago');
+  });
+
+  test('date string for older than a week', () => {
+    const iso = new Date('2026-01-15T10:00:00Z').toISOString();
+    const result = formatRelativeTime(iso);
+    assert.ok(result.includes('Jan'), 'expected Jan in result: ' + result);
+  });
+
+  test('invalid input returns "unknown"', () => {
+    assert.strictEqual(formatRelativeTime('not-a-date'), 'unknown');
+  });
+});
+
+describe('importTasks', () => {
+  test('merges new tasks into existing', () => {
+    const existing = makeTasks(2);
+    const imported = [{ id: 'new1', text: 'New task', completed: false, priority: 'medium', createdAt: '2026-07-25T10:00:00Z' }];
+    const result = importTasks(existing, imported);
+    assert.strictEqual(result.length, 3);
+    assert.strictEqual(result[0].id, 'new1');
+  });
+
+  test('dedupes by id', () => {
+    const existing = makeTasks(2);
+    const imported = [{ id: 't1', text: 'Duplicate', completed: false }];
+    const result = importTasks(existing, imported);
+    assert.strictEqual(result.length, 2);
+  });
+
+  test('invalid input (not array) returns existing unchanged', () => {
+    const existing = makeTasks(2);
+    const result = importTasks(existing, 'not an array');
+    assert.strictEqual(result.length, 2);
+    assert.notStrictEqual(result, existing);
+  });
+
+  test('filters out tasks without id or text', () => {
+    const existing = makeTasks(1);
+    const imported = [
+      { id: 'good1', text: 'Good', completed: false },
+      { text: 'No id' },
+      { id: 'no-text' },
+      null,
+    ];
+    const result = importTasks(existing, imported);
+    assert.strictEqual(result.length, 2);
+  });
+
+  test('empty imported returns existing unchanged', () => {
+    const existing = makeTasks(2);
+    const result = importTasks(existing, []);
+    assert.strictEqual(result.length, 2);
+  });
+
+  test('does not mutate input', () => {
+    const existing = makeTasks(2);
+    const imported = [{ id: 'new1', text: 'New', completed: false }];
+    const snap = JSON.parse(JSON.stringify(existing));
+    importTasks(existing, imported);
+    assert.deepStrictEqual(existing, snap);
   });
 });
 

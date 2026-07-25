@@ -15,10 +15,21 @@
       <button class="filter-btn" data-filter="active">Active</button>
       <button class="filter-btn" data-filter="completed">Completed</button>
     </div>
+    <div class="filters filters--priority">
+      <button class="filter-btn filter-btn--active" data-priority-filter="all">All Priority</button>
+      <button class="filter-btn" data-priority-filter="high">High</button>
+      <button class="filter-btn" data-priority-filter="medium">Medium</button>
+      <button class="filter-btn" data-priority-filter="low">Low</button>
+    </div>
     <ul id="todo-list"></ul>
     <footer class="app-footer">
       <span class="task-count">0 items left</span>
-      <button class="clear-completed">Clear completed</button>
+      <div class="footer-actions">
+        <button class="clear-completed">Clear completed</button>
+        <button class="export-btn">Export</button>
+        <button class="import-btn">Import</button>
+        <input type="file" id="import-input" accept=".json" style="display:none">
+      </div>
     </footer>
   </main>
   <script src="app.js?v=20260725"></script>

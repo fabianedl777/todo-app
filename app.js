@@ -65,6 +65,29 @@ function setPriority(tasks, id, priority) {
   return tasks.map(t => t.id === id ? { ...t, priority } : t);
 }
 
+function filterByPriority(tasks, priority) {
+  if (priority === 'all') return [...tasks];
+  return tasks.filter(t => (t.priority || 'medium') === priority);
+}
+
+function formatRelativeTime(isoString) {
+  const then = new Date(isoString).getTime();
+  if (isNaN(then)) return 'unknown';
+  const diff = Math.floor((Date.now() - then) / 1000);
+  if (diff < 60) return 'just now';
+  if (diff < 3600) return Math.floor(diff / 60) + 'm ago';
+  if (diff < 86400) return Math.floor(diff / 3600) + 'h ago';
+  if (diff < 604800) return Math.floor(diff / 86400) + 'd ago';
+  return new Date(isoString).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
+function importTasks(existing, imported) {
+  if (!Array.isArray(imported)) return [...existing];
+  const existingIds = new Set(existing.map(t => t.id));
+  const newTasks = imported.filter(t => t && t.id && !existingIds.has(t.id) && typeof t.text === 'string');
+  return [...newTasks, ...existing];
+}
+
 // ============================================================
 // SECTION 2: Storage Module — localStorage persistence
 // ============================================================
@@ -126,6 +149,24 @@ function loadTheme() {
   }
 }
 
+function savePriorityFilter(filter) {
+  try {
+    localStorage.setItem('priorityFilter', filter);
+  } catch (e) {
+    // Swallow
+  }
+}
+
+function loadPriorityFilter() {
+  try {
+    const f = localStorage.getItem('priorityFilter');
+    if (f === 'all' || f === 'high' || f === 'medium' || f === 'low') return f;
+    return 'all';
+  } catch (e) {
+    return 'all';
+  }
+}
+
 // ============================================================
 // Cross-Environment Export Guard
 // ============================================================
@@ -140,12 +181,17 @@ if (typeof module !== 'undefined' && module.exports) {
     countActive,
     clearCompleted,
     setPriority,
+    filterByPriority,
+    formatRelativeTime,
+    importTasks,
     saveTasks,
     loadTasks,
     saveFilter,
     loadFilter,
     saveTheme,
     loadTheme,
+    savePriorityFilter,
+    loadPriorityFilter,
   };
 }
 
@@ -156,12 +202,14 @@ if (typeof module !== 'undefined' && module.exports) {
 let tasks = [];
 let currentFilter = 'all';
 let currentTheme = 'light';
+let currentPriorityFilter = 'all';
 
 function render(tasks) {
   const ul = document.getElementById('todo-list');
   ul.innerHTML = '';
 
-  const visible = filterTasks(tasks, currentFilter);
+  let visible = filterTasks(tasks, currentFilter);
+  visible = filterByPriority(visible, currentPriorityFilter);
 
   for (const task of visible) {
     const li = document.createElement('li');
@@ -181,12 +229,16 @@ function render(tasks) {
     span.className = 'todo__text';
     span.textContent = task.text;
 
+    const dateSpan = document.createElement('span');
+    dateSpan.className = 'todo__date';
+    dateSpan.textContent = formatRelativeTime(task.createdAt);
+
     const deleteBtn = document.createElement('button');
     deleteBtn.className = 'todo__delete';
     deleteBtn.setAttribute('aria-label', 'Delete task');
     deleteBtn.textContent = '×';
 
-    li.append(priorityDot, checkbox, span, deleteBtn);
+    li.append(priorityDot, checkbox, span, dateSpan, deleteBtn);
     ul.appendChild(li);
   }
 
@@ -224,9 +276,12 @@ function handleListClick(e) {
     saveTasks(tasks);
     render(tasks);
   } else if (e.target.classList.contains('todo__delete')) {
-    tasks = deleteTask(tasks, id);
-    saveTasks(tasks);
-    render(tasks);
+    li.classList.add('todo-item--removing');
+    setTimeout(() => {
+      tasks = deleteTask(tasks, id);
+      saveTasks(tasks);
+      render(tasks);
+    }, 200);
   } else if (e.target.classList.contains('todo__priority')) {
     const current = tasks.find(t => t.id === id);
     if (!current) return;
@@ -331,19 +386,66 @@ function updateTaskCount(tasks) {
 
 function handleFilterClick(e) {
   const btn = e.target.closest('.filter-btn');
-  if (!btn) return;
+  if (!btn || !btn.dataset.filter) return;
   currentFilter = btn.dataset.filter;
   saveFilter(currentFilter);
   updateFilterButtons();
   render(tasks);
 }
 
+function updatePriorityFilterButtons() {
+  const buttons = document.querySelectorAll('[data-priority-filter]');
+  buttons.forEach(btn => {
+    btn.classList.toggle('filter-btn--active', btn.dataset.priorityFilter === currentPriorityFilter);
+  });
+}
+
+function handlePriorityFilterClick(e) {
+  const btn = e.target.closest('.filter-btn');
+  if (!btn || !btn.dataset.priorityFilter) return;
+  currentPriorityFilter = btn.dataset.priorityFilter;
+  savePriorityFilter(currentPriorityFilter);
+  updatePriorityFilterButtons();
+  render(tasks);
+}
+
+function handleExport() {
+  const data = JSON.stringify(tasks, null, 2);
+  const blob = new Blob([data], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'todo-backup-' + new Date().toISOString().slice(0,10) + '.json';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function handleImport(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function() {
+    try {
+      const imported = JSON.parse(reader.result);
+      tasks = importTasks(tasks, imported);
+      saveTasks(tasks);
+      render(tasks);
+    } catch(err) {
+      alert('Invalid JSON file');
+    }
+  };
+  reader.readAsText(file);
+  e.target.value = '';
+}
+
 function init() {
   tasks = loadTasks();
   currentFilter = loadFilter();
   currentTheme = loadTheme();
+  currentPriorityFilter = loadPriorityFilter();
   applyTheme(currentTheme);
   updateFilterButtons();
+  updatePriorityFilterButtons();
   render(tasks);
 
   document.getElementById('new-task-input').addEventListener('keydown', (e) => {
@@ -352,9 +454,13 @@ function init() {
 
   document.getElementById('todo-list').addEventListener('click', handleListClick);
   document.getElementById('todo-list').addEventListener('dblclick', handleListDblClick);
-  document.querySelector('.filters').addEventListener('click', handleFilterClick);
+  document.querySelector('.filters:not(.filters--priority)').addEventListener('click', handleFilterClick);
+  document.querySelector('.filters--priority').addEventListener('click', handlePriorityFilterClick);
   document.querySelector('.clear-completed').addEventListener('click', handleClearCompleted);
   document.querySelector('.theme-toggle').addEventListener('click', handleThemeToggle);
+  document.querySelector('.export-btn').addEventListener('click', handleExport);
+  document.querySelector('.import-btn').addEventListener('click', () => document.getElementById('import-input').click());
+  document.getElementById('import-input').addEventListener('change', handleImport);
 }
 
 if (typeof document !== 'undefined') {

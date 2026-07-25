@@ -13,7 +13,7 @@ Vanilla JS TODO app with CRUD, filters, priorities, dark mode (Drácula), and lo
 - **CSS** — CSS variables, glassmorphism, Drácula dark theme (`styles.css`)
 - **JavaScript (ES6+)** — vanilla, no frameworks, no bundler (`app.js`)
 - **Tests** — Node.js built-in test runner (`node:test`)
-- **Persistence** — `localStorage` (keys: `todos`, `filter`, `theme`)
+- **Persistence** — `localStorage` (keys: `todos`, `filter`, `theme`, `priorityFilter`)
 - **Deploy** — GitHub Pages via GitHub Actions
 
 ## Architecture
@@ -29,20 +29,27 @@ app.js
 │   ├── filterTasks()       — all/active/completed
 │   ├── countActive()       — active count
 │   ├── clearCompleted()    — bulk delete
-│   └── setPriority()       — high/medium/low
+│   ├── setPriority()       — high/medium/low
+│   ├── filterByPriority()  — filter by priority level
+│   ├── formatRelativeTime() — ISO to relative string
+│   └── importTasks()      — merge + dedupe by id
 ├── SECTION 2: Storage Module
 │   ├── saveTasks/loadTasks
 │   ├── saveFilter/loadFilter
-│   └── saveTheme/loadTheme
+│   ├── saveTheme/loadTheme
+│   └── savePriorityFilter/loadPriorityFilter
 ├── Export Guard (module.exports — Node only)
 └── SECTION 3: DOM Layer
-    ├── render()            — filterTasks + build DOM
+    ├── render()            — filterTasks + filterByPriority + build DOM
     ├── handleCreate()      — Enter key → create
-    ├── handleListClick()   — checkbox/delete/priority cycle
+    ├── handleListClick()   — checkbox/delete/priority cycle (with animations)
     ├── handleListDblClick()— inline edit
-    ├── handleFilterClick() — filter buttons
+    ├── handleFilterClick() — completion filter buttons
+    ├── handlePriorityFilterClick() — priority filter buttons
     ├── handleClearCompleted()
     ├── handleThemeToggle()
+    ├── handleExport()      — download JSON backup
+    ├── handleImport()      — read + merge JSON
     └── init()              — restore state + wire listeners
 ```
 
@@ -52,7 +59,7 @@ app.js
 node --test test/*.test.js
 ```
 
-- **63 tests**, all passing
+- **83 tests**, all passing
 - Pure functions tested in `test/task.test.js`
 - Storage functions tested in `test/storage.test.js`
 - Helpers in `test/helpers.js` (MockStorage, stubUUID, makeTasks)
@@ -62,7 +69,7 @@ node --test test/*.test.js
 
 - **Commits**: conventional commits (`feat:`, `fix:`, `docs:`). No AI attribution.
 - **No dependencies**: zero npm packages in production. `package.json` is metadata only.
-- **Immutability**: all pure functions return new array references, never mutate input.
+- **Immutability**: all pure functions return new array references, never mutate input. (`createTask` is the documented exception: returns same reference on empty/invalid input, per spec.)
 - **Event delegation**: single listeners on containers (`#todo-list`, `.filters`), not per-item.
 - **Cross-environment**: `module.exports` guard allows `require()` in Node, ignores in browser.
 - **CSS variables**: all colors via `var(--xxx)`. Dark theme via `[data-theme="dark"]`.
