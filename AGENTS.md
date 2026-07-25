@@ -105,6 +105,38 @@ Index: 47 nodes, 237 edges. Auto-syncs on file changes.
 - **Drag & drop reorder** (P1 — last pending from PRD)
 - See `PRD.md` for full roadmap
 
+## Implemented Features
+
+### P0 (Core)
+- ✅ Create task (text + Enter)
+- ✅ Mark completed (checkbox toggle)
+- ✅ Delete task
+- ✅ Edit task inline (double-click)
+- ✅ Persist to localStorage
+- ✅ Filter: All / Active / Completed
+- ✅ Active task counter
+- ✅ Clear completed (bulk delete)
+
+### P1 (Important)
+- ✅ Dark mode (Drácula theme, persists)
+- ✅ Empty state messages
+- ✅ Priorities (High/Medium/Low with color coding + click to cycle)
+- 🔲 Drag & drop reorder (pending)
+
+### P2 (Nice to Have)
+- ✅ Priority filters (All/High/Medium/Low)
+- ✅ Creation date visible (relative time)
+- ✅ Animations (slideIn/slideOut/completePulse)
+- ✅ Export/Import JSON
+
+### Design
+- ✅ Glassmorphism (backdrop blur, translucent cards)
+- ✅ Gradient accents (title, active buttons)
+- ✅ Soft shadows (3-level system)
+- ✅ Micro-interactions (hover transforms)
+- ✅ Inter font (system-ui fallback)
+- ✅ Responsive (mobile breakpoint at 480px)
+
 ## Files
 
 | File | Role |
