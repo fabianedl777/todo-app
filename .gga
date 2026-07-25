@@ -22,7 +22,7 @@
 #   PROVIDER="github:deepseek-r1"
 #   PROVIDER="minimax"
 #   PROVIDER="minimax:MiniMax-M3"
-PROVIDER="github:deepseek-r1"
+PROVIDER="ollama:glm-5.2:cloud"
 
 # File patterns to include in review (comma-separated)
 # Default: * (all files)
