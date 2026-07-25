@@ -142,7 +142,7 @@ h1 {
 }
 
 .todo__priority--high { color: var(--danger); }
-.todo__priority--medium { color: #bbb; }
+.todo__priority--medium { color: #888; }
 .todo__priority--low { color: var(--accent); }
 
 /* Task text */
