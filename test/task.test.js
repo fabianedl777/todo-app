@@ -1,6 +1,6 @@
 const { test, describe, beforeEach, afterEach } = require('node:test');
 const assert = require('node:assert/strict');
-const { createTask, toggleTask, deleteTask, editTask, filterTasks } = require('../app.js');
+const { createTask, toggleTask, deleteTask, editTask, filterTasks, countActive } = require('../app.js');
 const { stubUUID, makeTasks } = require('./helpers');
 
 describe('createTask', () => {
@@ -263,6 +263,43 @@ describe('filterTasks', () => {
     assert.notStrictEqual(filterTasks(tasks, 'all'), tasks);
     assert.notStrictEqual(filterTasks(tasks, 'active'), tasks);
     assert.notStrictEqual(filterTasks(tasks, 'completed'), tasks);
+  });
+});
+
+describe('countActive', () => {
+  test('returns 0 for empty array', () => {
+    assert.strictEqual(countActive([]), 0);
+  });
+
+  test('returns count of non-completed tasks (3 active, 2 completed → 3)', () => {
+    const tasks = makeTasks(5);
+    tasks[3].completed = true;
+    tasks[4].completed = true;
+    assert.strictEqual(countActive(tasks), 3);
+  });
+
+  test('returns 0 when all tasks are completed', () => {
+    const tasks = makeTasks(3);
+    tasks.forEach(t => { t.completed = true; });
+    assert.strictEqual(countActive(tasks), 0);
+  });
+
+  test('returns full length when none are completed', () => {
+    const tasks = makeTasks(4);
+    assert.strictEqual(countActive(tasks), 4);
+  });
+
+  test('returns 1 for single active task', () => {
+    const tasks = makeTasks(1);
+    assert.strictEqual(countActive(tasks), 1);
+  });
+
+  test('does not mutate input array', () => {
+    const tasks = makeTasks(3);
+    tasks[1].completed = true;
+    const originalSnapshot = JSON.parse(JSON.stringify(tasks));
+    countActive(tasks);
+    assert.deepStrictEqual(tasks, originalSnapshot);
   });
 });
 

@@ -134,3 +134,11 @@ h1 {
   border: 1px solid #4a90d9;
   border-radius: 4px;
 }
+
+/* Footer */
+.app-footer {
+  margin-top: 1rem;
+  padding: 0.5rem 0;
+  font-size: 0.8125rem;
+  color: #999;
+}

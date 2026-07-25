@@ -49,6 +49,10 @@ function filterTasks(tasks, filter) {
   return [...tasks];
 }
 
+function countActive(tasks) {
+  return tasks.filter(t => !t.completed).length;
+}
+
 // ============================================================
 // SECTION 2: Storage Module — localStorage persistence
 // ============================================================
@@ -103,6 +107,7 @@ if (typeof module !== 'undefined' && module.exports) {
     deleteTask,
     editTask,
     filterTasks,
+    countActive,
     saveTasks,
     loadTasks,
     saveFilter,
@@ -145,6 +150,8 @@ function render(tasks) {
     li.append(checkbox, span, deleteBtn);
     ul.appendChild(li);
   }
+
+  updateTaskCount(tasks);
 }
 
 function handleCreate() {
@@ -231,6 +238,12 @@ function updateFilterButtons() {
   buttons.forEach(btn => {
     btn.classList.toggle('filter-btn--active', btn.dataset.filter === currentFilter);
   });
+}
+
+function updateTaskCount(tasks) {
+  const count = countActive(tasks);
+  const el = document.querySelector('.task-count');
+  if (el) el.textContent = count + (count === 1 ? ' item left' : ' items left');
 }
 
 function handleFilterClick(e) {
