@@ -130,6 +130,18 @@ h1 {
   cursor: pointer;
 }
 
+/* Priority dot */
+.todo__priority {
+  flex-shrink: 0;
+  cursor: pointer;
+  font-size: 0.7rem;
+  user-select: none;
+}
+
+.todo__priority--high { color: var(--danger); }
+.todo__priority--medium { color: var(--muted); }
+.todo__priority--low { color: var(--accent); }
+
 /* Task text */
 .todo__text {
   flex: 1;

@@ -1,6 +1,6 @@
 const { test, describe, beforeEach, afterEach } = require('node:test');
 const assert = require('node:assert/strict');
-const { createTask, toggleTask, deleteTask, editTask, filterTasks, countActive, clearCompleted } = require('../app.js');
+const { createTask, toggleTask, deleteTask, editTask, filterTasks, countActive, clearCompleted, setPriority } = require('../app.js');
 const { stubUUID, makeTasks } = require('./helpers');
 
 describe('createTask', () => {
@@ -344,6 +344,62 @@ describe('clearCompleted', () => {
   test('returns new array reference (immutability)', () => {
     const tasks = makeTasks(2);
     assert.notStrictEqual(clearCompleted(tasks), tasks);
+  });
+});
+
+describe('setPriority', () => {
+  test('updates priority for matching id (medium → high)', () => {
+    const tasks = makeTasks(2);
+    tasks[0].priority = 'medium';
+    const result = setPriority(tasks, 't1', 'high');
+    assert.strictEqual(result[0].priority, 'high');
+    assert.strictEqual(result[0].id, 't1');
+    assert.strictEqual(result[1].priority, undefined);
+  });
+
+  test('with invalid priority returns new array unchanged', () => {
+    const tasks = makeTasks(2);
+    const result = setPriority(tasks, 't1', 'banana');
+    assert.notStrictEqual(result, tasks);
+    assert.deepStrictEqual(result, tasks);
+  });
+
+  test('with non-existent id returns new array unchanged', () => {
+    const tasks = makeTasks(2);
+    const result = setPriority(tasks, 'nope', 'high');
+    assert.notStrictEqual(result, tasks);
+    assert.deepStrictEqual(result, tasks);
+  });
+
+  test('does not mutate input array', () => {
+    const tasks = makeTasks(2);
+    tasks[0].priority = 'medium';
+    const originalSnapshot = JSON.parse(JSON.stringify(tasks));
+    setPriority(tasks, 't1', 'high');
+    assert.deepStrictEqual(tasks, originalSnapshot);
+  });
+
+  test('returns new array reference', () => {
+    const tasks = makeTasks(2);
+    assert.notStrictEqual(setPriority(tasks, 't1', 'high'), tasks);
+  });
+});
+
+describe('createTask priority default', () => {
+  let restoreUUID;
+
+  beforeEach(() => {
+    restoreUUID = stubUUID();
+  });
+
+  afterEach(() => {
+    restoreUUID();
+  });
+
+  test('new task has priority medium by default', () => {
+    const tasks = makeTasks(0);
+    const result = createTask(tasks, 'New task');
+    assert.strictEqual(result[0].priority, 'medium');
   });
 });
 
