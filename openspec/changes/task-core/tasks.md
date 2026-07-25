@@ -11,7 +11,7 @@
 
 ## 2. Test Infrastructure Verification
 
-- [x] 2.1 Run `node --test test/` and confirm both test files are discovered and all tests fail (no implementations yet — Red phase baseline)
+- [x] 2.1 Run `node --test test/*.test.js` and confirm both test files are discovered and all tests fail (no implementations yet — Red phase baseline)
 
 ## 3. Data Persistence — TDD: saveTasks
 
@@ -76,7 +76,7 @@
 
 - [x] 9.1 Write test: all four pure functions (`createTask`, `toggleTask`, `deleteTask`, `editTask`) return a different array reference than the input (`assert.notStrictEqual` for each)
 - [x] 9.2 Write test: all four pure functions do not mutate the input array (deep-compare original before/after)
-- [x] 9.3 Run full test suite (`node --test test/`), confirm all tests Green — Refactor if needed, re-run to confirm still Green
+- [x] 9.3 Run full test suite (`node --test test/*.test.js`), confirm all tests Green — Refactor if needed, re-run to confirm still Green
 
 ## 10. DOM Layer — HTML Structure
 
@@ -117,7 +117,7 @@
 
 ## 17. Full Test Suite — Green Confirmation
 
-- [x] 17.1 Run `node --test test/` and confirm all tests pass (Green) — no regressions from DOM layer additions
+- [x] 17.1 Run `node --test test/*.test.js` and confirm all tests pass (Green) — no regressions from DOM layer additions
 - [x] 17.2 Refactor: review `app.js` for section clarity, remove dead code, ensure no function is exported that shouldn't be — re-run tests, confirm still Green
 
 ## 18. Manual Verification — Acceptance Criteria

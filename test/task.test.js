@@ -241,7 +241,7 @@ describe('Immutability invariant', () => {
     assert.deepStrictEqual(tasks, originalSnapshot);
   });
 
-  test('full test suite runs Green (node --test test/)', () => {
+  test('full test suite runs Green (node --test test/*.test.js)', () => {
     // This is a placeholder — the actual full suite run is done via CLI
     assert.ok(true);
   });
