@@ -53,6 +53,10 @@ function countActive(tasks) {
   return tasks.filter(t => !t.completed).length;
 }
 
+function clearCompleted(tasks) {
+  return tasks.filter(t => !t.completed);
+}
+
 // ============================================================
 // SECTION 2: Storage Module — localStorage persistence
 // ============================================================
@@ -108,6 +112,7 @@ if (typeof module !== 'undefined' && module.exports) {
     editTask,
     filterTasks,
     countActive,
+    clearCompleted,
     saveTasks,
     loadTasks,
     saveFilter,
@@ -152,6 +157,10 @@ function render(tasks) {
   }
 
   updateTaskCount(tasks);
+
+  const hasCompleted = tasks.some(t => t.completed);
+  const clearBtn = document.querySelector('.clear-completed');
+  if (clearBtn) clearBtn.style.display = hasCompleted ? '' : 'none';
 }
 
 function handleCreate() {
@@ -233,6 +242,12 @@ function cancelEdit(li, task) {
   render(tasks);
 }
 
+function handleClearCompleted() {
+  tasks = clearCompleted(tasks);
+  saveTasks(tasks);
+  render(tasks);
+}
+
 function updateFilterButtons() {
   const buttons = document.querySelectorAll('.filter-btn');
   buttons.forEach(btn => {
@@ -268,6 +283,7 @@ function init() {
   document.getElementById('todo-list').addEventListener('click', handleListClick);
   document.getElementById('todo-list').addEventListener('dblclick', handleListDblClick);
   document.querySelector('.filters').addEventListener('click', handleFilterClick);
+  document.querySelector('.clear-completed').addEventListener('click', handleClearCompleted);
 }
 
 if (typeof document !== 'undefined') {

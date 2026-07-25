@@ -1,6 +1,6 @@
 const { test, describe, beforeEach, afterEach } = require('node:test');
 const assert = require('node:assert/strict');
-const { createTask, toggleTask, deleteTask, editTask, filterTasks, countActive } = require('../app.js');
+const { createTask, toggleTask, deleteTask, editTask, filterTasks, countActive, clearCompleted } = require('../app.js');
 const { stubUUID, makeTasks } = require('./helpers');
 
 describe('createTask', () => {
@@ -300,6 +300,50 @@ describe('countActive', () => {
     const originalSnapshot = JSON.parse(JSON.stringify(tasks));
     countActive(tasks);
     assert.deepStrictEqual(tasks, originalSnapshot);
+  });
+});
+
+describe('clearCompleted', () => {
+  test('removes all completed tasks (3 active, 2 completed → 3 active remain)', () => {
+    const tasks = makeTasks(5);
+    tasks[3].completed = true;
+    tasks[4].completed = true;
+    const result = clearCompleted(tasks);
+    assert.strictEqual(result.length, 3);
+    assert.strictEqual(result.every(t => !t.completed), true);
+  });
+
+  test('returns empty array when all tasks completed', () => {
+    const tasks = makeTasks(3);
+    tasks.forEach(t => { t.completed = true; });
+    const result = clearCompleted(tasks);
+    assert.strictEqual(result.length, 0);
+  });
+
+  test('returns same content when no completed tasks (new reference)', () => {
+    const tasks = makeTasks(3);
+    const result = clearCompleted(tasks);
+    assert.strictEqual(result.length, 3);
+    assert.notStrictEqual(result, tasks);
+    assert.deepStrictEqual(result, tasks);
+  });
+
+  test('on empty array returns empty array', () => {
+    const result = clearCompleted([]);
+    assert.deepStrictEqual(result, []);
+  });
+
+  test('does not mutate input array', () => {
+    const tasks = makeTasks(3);
+    tasks[1].completed = true;
+    const originalSnapshot = JSON.parse(JSON.stringify(tasks));
+    clearCompleted(tasks);
+    assert.deepStrictEqual(tasks, originalSnapshot);
+  });
+
+  test('returns new array reference (immutability)', () => {
+    const tasks = makeTasks(2);
+    assert.notStrictEqual(clearCompleted(tasks), tasks);
   });
 });
 
