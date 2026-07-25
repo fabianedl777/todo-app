@@ -1,6 +1,6 @@
 const { test, describe, beforeEach, afterEach } = require('node:test');
 const assert = require('node:assert/strict');
-const { createTask, toggleTask, deleteTask, editTask, filterTasks, countActive, clearCompleted, setPriority, filterByPriority, formatRelativeTime, importTasks } = require('../app.js');
+const { createTask, toggleTask, deleteTask, editTask, filterTasks, countActive, clearCompleted, setPriority, filterByPriority, formatRelativeTime, importTasks, reorderTasks } = require('../app.js');
 const { stubUUID, makeTasks } = require('./helpers');
 
 describe('createTask', () => {
@@ -544,6 +544,62 @@ describe('importTasks', () => {
     const snap = JSON.parse(JSON.stringify(existing));
     importTasks(existing, imported);
     assert.deepStrictEqual(existing, snap);
+  });
+});
+
+describe('reorderTasks', () => {
+  test('move task from index 2 to index 0 → [C, A, B]', () => {
+    const tasks = makeTasks(3);
+    const result = reorderTasks(tasks, 't3', 't1');
+    assert.strictEqual(result[0].id, 't3');
+    assert.strictEqual(result[1].id, 't1');
+    assert.strictEqual(result[2].id, 't2');
+  });
+
+  test('move task from index 0 to index 2 → [B, C, A]', () => {
+    const tasks = makeTasks(3);
+    const result = reorderTasks(tasks, 't1', 't3');
+    assert.strictEqual(result[0].id, 't2');
+    assert.strictEqual(result[1].id, 't3');
+    assert.strictEqual(result[2].id, 't1');
+  });
+
+  test('same id returns unchanged (new reference)', () => {
+    const tasks = makeTasks(2);
+    const result = reorderTasks(tasks, 't1', 't1');
+    assert.notStrictEqual(result, tasks);
+    assert.deepStrictEqual(result, tasks);
+  });
+
+  test('non-existent fromId returns unchanged', () => {
+    const tasks = makeTasks(2);
+    const result = reorderTasks(tasks, 'nope', 't2');
+    assert.notStrictEqual(result, tasks);
+    assert.deepStrictEqual(result, tasks);
+  });
+
+  test('non-existent toId returns unchanged', () => {
+    const tasks = makeTasks(2);
+    const result = reorderTasks(tasks, 't1', 'nope');
+    assert.notStrictEqual(result, tasks);
+    assert.deepStrictEqual(result, tasks);
+  });
+
+  test('empty array returns empty', () => {
+    const result = reorderTasks([], 't1', 't2');
+    assert.deepStrictEqual(result, []);
+  });
+
+  test('does not mutate input array', () => {
+    const tasks = makeTasks(3);
+    const snapshot = JSON.parse(JSON.stringify(tasks));
+    reorderTasks(tasks, 't3', 't1');
+    assert.deepStrictEqual(tasks, snapshot);
+  });
+
+  test('returns new reference', () => {
+    const tasks = makeTasks(2);
+    assert.notStrictEqual(reorderTasks(tasks, 't1', 't2'), tasks);
   });
 });
 

@@ -88,6 +88,17 @@ function importTasks(existing, imported) {
   return [...newTasks, ...existing];
 }
 
+function reorderTasks(tasks, fromId, toId) {
+  if (fromId === toId) return [...tasks];
+  const fromIdx = tasks.findIndex(t => t.id === fromId);
+  const toIdx = tasks.findIndex(t => t.id === toId);
+  if (fromIdx === -1 || toIdx === -1) return [...tasks];
+  const result = [...tasks];
+  const [moved] = result.splice(fromIdx, 1);
+  result.splice(toIdx, 0, moved);
+  return result;
+}
+
 // ============================================================
 // SECTION 2: Storage Module — localStorage persistence
 // ============================================================
@@ -184,6 +195,7 @@ if (typeof module !== 'undefined' && module.exports) {
     filterByPriority,
     formatRelativeTime,
     importTasks,
+    reorderTasks,
     saveTasks,
     loadTasks,
     saveFilter,
@@ -215,6 +227,9 @@ function render(tasks) {
     const li = document.createElement('li');
     li.className = task.completed ? 'todo-item todo-item--completed' : 'todo-item';
     li.dataset.id = task.id;
+
+    const canDrag = currentFilter === 'all' && currentPriorityFilter === 'all';
+    li.draggable = canDrag;
 
     const priorityDot = document.createElement('span');
     priorityDot.className = 'todo__priority todo__priority--' + (task.priority || 'medium');
@@ -352,6 +367,47 @@ function handleClearCompleted() {
   render(tasks);
 }
 
+function handleDragStart(e) {
+  const li = e.target.closest('.todo-item');
+  if (!li || !li.draggable) return;
+  e.dataTransfer.setData('text/plain', li.dataset.id);
+  e.dataTransfer.effectAllowed = 'move';
+  li.classList.add('todo-item--dragging');
+}
+
+function handleDragOver(e) {
+  const li = e.target.closest('.todo-item');
+  if (!li) return;
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+  li.classList.add('todo-item--drag-over');
+}
+
+function handleDragLeave(e) {
+  const li = e.target.closest('.todo-item');
+  if (!li) return;
+  li.classList.remove('todo-item--drag-over');
+}
+
+function handleDrop(e) {
+  e.preventDefault();
+  const li = e.target.closest('.todo-item');
+  if (!li) return;
+  li.classList.remove('todo-item--drag-over');
+  const fromId = e.dataTransfer.getData('text/plain');
+  const toId = li.dataset.id;
+  if (!fromId || !toId) return;
+  tasks = reorderTasks(tasks, fromId, toId);
+  saveTasks(tasks);
+  render(tasks);
+}
+
+function handleDragEnd(e) {
+  document.querySelectorAll('.todo-item--dragging, .todo-item--drag-over').forEach(el => {
+    el.classList.remove('todo-item--dragging', 'todo-item--drag-over');
+  });
+}
+
 function updateFilterButtons() {
   const buttons = document.querySelectorAll('.filter-btn');
   buttons.forEach(btn => {
@@ -454,6 +510,11 @@ function init() {
 
   document.getElementById('todo-list').addEventListener('click', handleListClick);
   document.getElementById('todo-list').addEventListener('dblclick', handleListDblClick);
+  document.getElementById('todo-list').addEventListener('dragstart', handleDragStart);
+  document.getElementById('todo-list').addEventListener('dragover', handleDragOver);
+  document.getElementById('todo-list').addEventListener('dragleave', handleDragLeave);
+  document.getElementById('todo-list').addEventListener('drop', handleDrop);
+  document.getElementById('todo-list').addEventListener('dragend', handleDragEnd);
   document.querySelector('.filters:not(.filters--priority)').addEventListener('click', handleFilterClick);
   document.querySelector('.filters--priority').addEventListener('click', handlePriorityFilterClick);
   document.querySelector('.clear-completed').addEventListener('click', handleClearCompleted);

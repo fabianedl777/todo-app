@@ -189,6 +189,14 @@ h1 {
   animation: completePulse 0.3s ease forwards;
 }
 
+.todo-item--dragging {
+  opacity: 0.4;
+}
+
+.todo-item--drag-over {
+  border-top: 2px solid var(--accent);
+}
+
 @keyframes slideIn {
   from { opacity: 0; transform: translateY(-8px); }
   to { opacity: 1; transform: translateY(0); }
