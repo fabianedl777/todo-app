@@ -1,6 +1,6 @@
 const { test, describe, beforeEach, afterEach } = require('node:test');
 const assert = require('node:assert/strict');
-const { createTask, toggleTask, deleteTask, editTask } = require('../app.js');
+const { createTask, toggleTask, deleteTask, editTask, filterTasks } = require('../app.js');
 const { stubUUID, makeTasks } = require('./helpers');
 
 describe('createTask', () => {
@@ -202,6 +202,67 @@ describe('editTask', () => {
     assert.strictEqual(result[1].id, 't2');
     assert.strictEqual(result[1].text, 'Task 2');
     assert.strictEqual(result[1].completed, false);
+  });
+});
+
+describe('filterTasks', () => {
+  test('"all" returns all tasks (new reference, input unchanged)', () => {
+    const tasks = makeTasks(3);
+    const result = filterTasks(tasks, 'all');
+    assert.strictEqual(result.length, 3);
+    assert.notStrictEqual(result, tasks);
+    assert.deepStrictEqual(tasks, makeTasks(3));
+  });
+
+  test('"active" returns only non-completed tasks', () => {
+    const tasks = makeTasks(3);
+    tasks[1].completed = true;
+    const result = filterTasks(tasks, 'active');
+    assert.strictEqual(result.length, 2);
+    assert.strictEqual(result[0].id, 't1');
+    assert.strictEqual(result[1].id, 't3');
+    assert.strictEqual(result.every(t => !t.completed), true);
+  });
+
+  test('"completed" returns only completed tasks', () => {
+    const tasks = makeTasks(3);
+    tasks[1].completed = true;
+    const result = filterTasks(tasks, 'completed');
+    assert.strictEqual(result.length, 1);
+    assert.strictEqual(result[0].id, 't2');
+    assert.strictEqual(result[0].completed, true);
+  });
+
+  test('empty array returns empty array for all three filters', () => {
+    assert.deepStrictEqual(filterTasks([], 'all'), []);
+    assert.deepStrictEqual(filterTasks([], 'active'), []);
+    assert.deepStrictEqual(filterTasks([], 'completed'), []);
+  });
+
+  test('invalid filter value ("banana") defaults to "all" (returns all tasks)', () => {
+    const tasks = makeTasks(2);
+    const result = filterTasks(tasks, 'banana');
+    assert.strictEqual(result.length, 2);
+    assert.notStrictEqual(result, tasks);
+  });
+
+  test('does not mutate input array', () => {
+    const tasks = makeTasks(3);
+    tasks[1].completed = true;
+    const originalSnapshot = JSON.parse(JSON.stringify(tasks));
+    filterTasks(tasks, 'active');
+    assert.deepStrictEqual(tasks, originalSnapshot);
+    filterTasks(tasks, 'completed');
+    assert.deepStrictEqual(tasks, originalSnapshot);
+    filterTasks(tasks, 'all');
+    assert.deepStrictEqual(tasks, originalSnapshot);
+  });
+
+  test('returns new array reference for all filters (immutability invariant)', () => {
+    const tasks = makeTasks(2);
+    assert.notStrictEqual(filterTasks(tasks, 'all'), tasks);
+    assert.notStrictEqual(filterTasks(tasks, 'active'), tasks);
+    assert.notStrictEqual(filterTasks(tasks, 'completed'), tasks);
   });
 });
 

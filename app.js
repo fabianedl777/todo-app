@@ -43,6 +43,12 @@ function editTask(tasks, id, newText) {
   });
 }
 
+function filterTasks(tasks, filter) {
+  if (filter === 'active') return tasks.filter(t => !t.completed);
+  if (filter === 'completed') return tasks.filter(t => t.completed);
+  return [...tasks];
+}
+
 // ============================================================
 // SECTION 2: Storage Module — localStorage persistence
 // ============================================================
@@ -66,6 +72,26 @@ function loadTasks() {
   }
 }
 
+function saveFilter(filter) {
+  try {
+    localStorage.setItem('filter', filter);
+  } catch (e) {
+    // Swallow: app continues with in-memory filter
+  }
+}
+
+function loadFilter() {
+  try {
+    const filter = localStorage.getItem('filter');
+    if (filter === 'all' || filter === 'active' || filter === 'completed') {
+      return filter;
+    }
+    return 'all';
+  } catch (e) {
+    return 'all';
+  }
+}
+
 // ============================================================
 // Cross-Environment Export Guard
 // ============================================================
@@ -76,8 +102,11 @@ if (typeof module !== 'undefined' && module.exports) {
     toggleTask,
     deleteTask,
     editTask,
+    filterTasks,
     saveTasks,
     loadTasks,
+    saveFilter,
+    loadFilter,
   };
 }
 
@@ -86,12 +115,15 @@ if (typeof module !== 'undefined' && module.exports) {
 // ============================================================
 
 let tasks = [];
+let currentFilter = 'all';
 
 function render(tasks) {
   const ul = document.getElementById('todo-list');
   ul.innerHTML = '';
 
-  for (const task of tasks) {
+  const visible = filterTasks(tasks, currentFilter);
+
+  for (const task of visible) {
     const li = document.createElement('li');
     li.className = task.completed ? 'todo-item todo-item--completed' : 'todo-item';
     li.dataset.id = task.id;
@@ -194,8 +226,26 @@ function cancelEdit(li, task) {
   render(tasks);
 }
 
+function updateFilterButtons() {
+  const buttons = document.querySelectorAll('.filter-btn');
+  buttons.forEach(btn => {
+    btn.classList.toggle('filter-btn--active', btn.dataset.filter === currentFilter);
+  });
+}
+
+function handleFilterClick(e) {
+  const btn = e.target.closest('.filter-btn');
+  if (!btn) return;
+  currentFilter = btn.dataset.filter;
+  saveFilter(currentFilter);
+  updateFilterButtons();
+  render(tasks);
+}
+
 function init() {
   tasks = loadTasks();
+  currentFilter = loadFilter();
+  updateFilterButtons();
   render(tasks);
 
   document.getElementById('new-task-input').addEventListener('keydown', (e) => {
@@ -204,6 +254,7 @@ function init() {
 
   document.getElementById('todo-list').addEventListener('click', handleListClick);
   document.getElementById('todo-list').addEventListener('dblclick', handleListDblClick);
+  document.querySelector('.filters').addEventListener('click', handleFilterClick);
 }
 
 if (typeof document !== 'undefined') {

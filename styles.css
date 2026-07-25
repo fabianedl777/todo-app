@@ -37,6 +37,39 @@ h1 {
   border-color: #4a90d9;
 }
 
+/* Filter bar */
+.filters {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.filter-btn {
+  padding: 0.4rem 0.9rem;
+  font-size: 0.875rem;
+  border: 1px solid #ddd;
+  border-radius: 999px;
+  background: transparent;
+  color: #666;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.filter-btn:hover {
+  border-color: #4a90d9;
+  color: #4a90d9;
+}
+
+.filter-btn--active {
+  background: #4a90d9;
+  border-color: #4a90d9;
+  color: #fff;
+}
+
+.filter-btn--active:hover {
+  color: #fff;
+}
+
 /* Task list */
 #todo-list {
   list-style: none;
