@@ -1,5 +1,7 @@
 // ============================================================
 // SECTION 1: Pure Functions — Task CRUD logic (no side effects)
+// Functions: generateId, createTask, toggleTask, deleteTask, editTask,
+//            filterTasks, countActive, clearCompleted, setPriority
 // ============================================================
 
 function generateId() {
